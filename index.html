@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Digital Escape Room</title>
+    <title>Digital Escape Room V3</title>
     <style>
       /* =========================================
            CSS STYLES & CYBERPUNK THEME
@@ -30,20 +30,58 @@
         overflow-x: hidden;
       }
 
-      /* Glitch/Flicker effect for the whole page when game starts */
+      /* CRT Scanline Effect */
+      .crt::before {
+        content: " ";
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+        z-index: 9999;
+        background-size: 100% 2px, 3px 100%;
+        pointer-events: none;
+      }
+
+      /* Matrix Canvas Background */
+      #matrixCanvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        opacity: 0.3;
+      }
+      
+      /* V4 Malfunction Glitch */
+      .malfunction {
+        animation: criticalMalfunction 0.3s infinite;
+      }
+      @keyframes criticalMalfunction {
+        0% { transform: translate(2px, 1px) rotate(0deg); filter: hue-rotate(0deg) contrast(1); }
+        10% { transform: translate(-1px, -2px) rotate(-1deg); filter: hue-rotate(90deg) contrast(1.5) blur(1px); }
+        20% { transform: translate(-3px, 0px) rotate(1deg); filter: hue-rotate(180deg) contrast(2) invert(0.2); }
+        30% { transform: translate(0px, 2px) rotate(0deg); filter: hue-rotate(270deg) contrast(1) blur(2px); }
+        40% { transform: translate(1px, -1px) rotate(1deg); filter: hue-rotate(360deg) contrast(1.5); }
+        50% { transform: translate(-1px, 2px) rotate(-1deg); filter: hue-rotate(90deg) contrast(2) invert(0.1); }
+        60% { transform: translate(-3px, 1px) rotate(0deg); filter: hue-rotate(180deg) contrast(1) blur(1px); }
+        70% { transform: translate(2px, 1px) rotate(-1deg); filter: hue-rotate(270deg) contrast(1.5); }
+        80% { transform: translate(-1px, -1px) rotate(1deg); filter: hue-rotate(360deg) contrast(2) blur(2px); }
+        90% { transform: translate(2px, 2px) rotate(0deg); filter: hue-rotate(90deg) contrast(1) invert(0.2); }
+        100% { transform: translate(1px, -2px) rotate(-1deg); filter: hue-rotate(180deg) contrast(1.5) blur(1px); }
+      }
+
+      /* Glitch/Flicker effect */
       .flicker {
         animation: flicker 0.15s infinite alternate;
       }
 
       @keyframes flicker {
-        0% {
-          text-shadow: 0 0 2px var(--text-color);
-          opacity: 0.95;
-        }
-        100% {
-          text-shadow: 0 0 8px var(--text-color);
-          opacity: 1;
-        }
+        0% { text-shadow: 0 0 2px var(--text-color); opacity: 0.95; }
+        100% { text-shadow: 0 0 8px var(--text-color); opacity: 1; }
       }
 
       /* Persistent Timer Header */
@@ -52,25 +90,54 @@
         top: 0;
         left: 0;
         width: 100%;
-        background-color: #000;
-        text-align: center;
-        padding: 15px;
-        font-size: 24px;
+        background-color: rgba(0,0,0,0.9);
+        padding: 15px 30px;
+        font-size: 20px;
         font-weight: bold;
         border-bottom: 2px solid var(--text-color);
         z-index: 10000;
         box-shadow: 0 0 15px var(--text-color);
-        display: none; /* Hidden on intro screen */
+        display: none; 
+        justify-content: space-between;
+        align-items: center;
+        box-sizing: border-box;
+      }
+
+      /* Hacker Terminal Log */
+      #terminal-log {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 320px;
+        height: 150px;
+        background: rgba(0, 0, 0, 0.8);
+        border: 1px solid var(--text-color);
+        font-size: 12px;
+        overflow-y: hidden;
+        padding: 10px;
+        z-index: 10000;
+        box-shadow: 0 0 10px var(--text-color);
+        display: none;
+        flex-direction: column;
+        justify-content: flex-end;
+      }
+      .log-line {
+        margin: 2px 0;
+        opacity: 0;
+        animation: fadeInLog 0.3s forwards;
+      }
+      @keyframes fadeInLog {
+        to { opacity: 1; }
       }
 
       #game-container {
-        margin-top: 60px; /* Space for the fixed timer */
+        margin-top: 80px; 
         width: 100%;
         display: flex;
         justify-content: center;
       }
 
-      /* Room Containers - Only active room is displayed */
+      /* Room Containers - Cinematic Slide Transitions */
       .room {
         display: none;
         max-width: 600px;
@@ -82,27 +149,30 @@
         background: var(--terminal-bg);
         border-radius: 4px;
         position: relative;
+        z-index: 10;
       }
 
       .room.active {
         display: block;
-        animation: fadeIn 0.5s ease-in;
+        animation: slideInRight 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       }
 
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(-10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
+      @keyframes slideInRight {
+        from { opacity: 0; transform: translateX(50px) scale(0.98); }
+        to { opacity: 1; transform: translateX(0) scale(1); }
+      }
+
+      /* Typewriter Wipe Animation for room text */
+      .room.active > h2, .room.active > p:not(.error-text), .room.active > .whiteboard, .room.active > .hint {
+        animation: reveal 1s steps(40) forwards;
+      }
+      @keyframes reveal {
+        0% { clip-path: inset(0 100% 0 0); }
+        100% { clip-path: inset(0 0 0 0); }
       }
 
       /* Typography & Inputs */
-      h1,
-      h2 {
+      h1, h2 {
         margin-top: 0;
         text-transform: uppercase;
         letter-spacing: 2px;
@@ -117,6 +187,7 @@
         color: #888;
         font-style: italic;
         margin-bottom: 20px;
+        min-height: 30px;
       }
 
       input[type="text"], input[type="hidden"] {
@@ -138,7 +209,7 @@
         box-shadow: 0 0 15px var(--text-color);
       }
 
-      /* Buttons */
+      /* Glitching Buttons */
       button {
         background: var(--text-color);
         color: var(--bg-color);
@@ -152,19 +223,30 @@
         margin-top: 15px;
         transition: all 0.2s;
         display: inline-block;
+        position: relative;
       }
 
       button:hover:not([disabled]) {
         background: transparent;
         color: var(--text-color);
         box-shadow: 0 0 15px var(--text-color);
+        animation: glitch-anim 0.3s infinite;
+      }
+
+      @keyframes glitch-anim {
+        0% { text-shadow: 2px 0 var(--error-color), -2px 0 #0055ff; transform: translate(1px, 1px); }
+        20% { text-shadow: -2px 0 var(--error-color), 2px 0 #0055ff; transform: translate(-1px, -1px); }
+        40% { text-shadow: 2px 0 var(--error-color), -2px 0 #0055ff; transform: translate(-1px, 1px); }
+        60% { text-shadow: -2px 0 var(--error-color), 2px 0 #0055ff; transform: translate(1px, -1px); }
+        80% { text-shadow: 2px 0 var(--error-color), -2px 0 #0055ff; transform: translate(1px, 1px); }
+        100% { text-shadow: -2px 0 var(--error-color), 2px 0 #0055ff; transform: translate(-1px, -1px); }
       }
       
       button[disabled] {
         border-color: #555;
       }
 
-      /* Custom Badge for Room 5 */
+      /* Custom Badge */
       .badge {
         border: 2px solid var(--text-color);
         padding: 8px 16px;
@@ -179,7 +261,7 @@
       .error-text {
         color: var(--error-color);
         margin-top: 15px;
-        min-height: 20px; /* Prevent layout shift */
+        min-height: 20px; 
         font-weight: bold;
       }
 
@@ -190,26 +272,13 @@
       }
 
       @keyframes shake {
-        10%,
-        90% {
-          transform: translate3d(-2px, 0, 0);
-        }
-        20%,
-        80% {
-          transform: translate3d(4px, 0, 0);
-        }
-        30%,
-        50%,
-        70% {
-          transform: translate3d(-6px, 0, 0);
-        }
-        40%,
-        60% {
-          transform: translate3d(6px, 0, 0);
-        }
+        10%, 90% { transform: translate3d(-2px, 0, 0); }
+        20%, 80% { transform: translate3d(4px, 0, 0); }
+        30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+        40%, 60% { transform: translate3d(6px, 0, 0); }
       }
 
-      /* Custom Whiteboard for Room 4 & 18 & 14 */
+      /* Custom Whiteboard */
       .whiteboard {
         background: #eef2f5;
         color: #1a1a1a;
@@ -228,7 +297,7 @@
         margin: 0;
       }
       
-      /* Responsive hidden class for Room 10 */
+      /* Responsive hidden class */
       .hidden-secret {
         display: none;
       }
@@ -249,7 +318,7 @@
       }
 
       #start-btn {
-        display: none; /* Hidden until typewriter finishes */
+        display: none; 
       }
 
       /* Game Over / Victory */
@@ -267,10 +336,27 @@
       }
     </style>
   </head>
-  <body>
+  <body class="crt">
+    <canvas id="matrixCanvas"></canvas>
+
+    <!-- Hacker Terminal Log -->
+    <div id="terminal-log"></div>
+
     <!-- Persistent Timer Header -->
     <div id="timer-container">
-      SYSTEM OVERRIDE IN: <span id="timer">45:00</span>
+      <div style="flex: 1; text-align: left; font-size: 18px;">
+        SCORE: <br/><span id="score" style="font-size: 24px; transition: color 0.3s;">0</span>
+      </div>
+      <div style="flex: 2; text-align: center; max-width: 400px; margin: 0 20px;">
+        <div style="font-size: 14px; margin-bottom: 5px;">OVERRIDE PROGRESS: <span id="room-counter">1/25</span></div>
+        <div style="width: 100%; height: 10px; background: #333; border: 1px solid var(--text-color);">
+            <div id="progress-bar" style="width: 4%; height: 100%; background: var(--text-color); transition: width 0.5s;"></div>
+        </div>
+      </div>
+      <div style="flex: 1; text-align: right; font-size: 18px;">
+        HINTS: <span id="hints-counter" style="margin-right: 20px; font-size: 24px;">3 FREE</span>
+        TIME LEFT: <span id="timer" style="font-size: 24px;">45:00</span>
+      </div>
     </div>
 
     <div id="game-container">
@@ -279,6 +365,16 @@
              ========================================= -->
       <div id="intro-screen" class="room active">
         <h2 id="intro-text"></h2>
+        <div id="intro-rules" style="display: none; text-align: left; margin: 20px 0; padding: 15px; border: 1px dashed var(--text-color); background: rgba(0, 255, 0, 0.05);">
+            <h3 style="margin-top: 0;">RULES OF ENGAGEMENT:</h3>
+            <ul style="padding-left: 20px; font-size: 14px; color: #ddd;">
+                <li>You have exactly 45 minutes to override all 25 security nodes.</li>
+                <li>Correct answers award <b style="color: var(--text-color);">+100</b> points.</li>
+                <li>Incorrect attempts penalize <b style="color: var(--error-color);">-20</b> points.</li>
+                <li>If you are stuck, your first <b>3 hints are Free</b>. After that, they cost <b style="color: var(--error-color);">-50</b> points each.</li>
+                <li>Do not refresh the page. (Your progress will be saved, but time continues to tick).</li>
+            </ul>
+        </div>
         <button id="start-btn" onclick="startGame()">INITIATE HACK</button>
       </div>
 
@@ -287,12 +383,12 @@
              ========================================= -->
       <div id="room-1" class="room">
         <h2>Room 1: The Inspector</h2>
-        <p class="hint">Hint: Look beneath the surface.</p>
+        <div class="hint">Hint: Look beneath the surface. Inspect the area below.</div>
 
         <!-- This div is hidden visually, requiring DevTools to find -->
         <div style="display: none" id="secret-pin">8492</div>
 
-        <p>Enter the 4-digit access PIN to unlock the door.</p>
+        <p>The 4-digit access PIN is hiding beneath the surface layer of this reality. You must dig deeper into the structure to unlock the door.</p>
         <input type="text" id="pin-input" placeholder="____" maxlength="4" autocomplete="off" />
         <br />
         <button onclick="checkRoom1()">UNLOCK DOOR</button>
@@ -304,9 +400,9 @@
              ========================================= -->
       <div id="room-2" class="room">
         <h2>Room 2: The Console Whisperer</h2>
-        <p class="hint">Hint: The system is talking to you behind the scenes.</p>
+        <div class="hint">Hint: The system is talking to you behind the scenes. Check your Developer Console.</div>
 
-        <p>Enter the administrative access token.</p>
+        <p>The system is quietly whispering secrets in the background. Listen closely to its console logs to find the administrative token.</p>
         <input type="text" id="token-input" placeholder="ENTER TOKEN" autocomplete="off" />
         <br />
         <button onclick="checkRoom2()">AUTHENTICATE</button>
@@ -318,9 +414,9 @@
              ========================================= -->
       <div id="room-3" class="room">
         <h2>Room 3: The Memory Storage</h2>
-        <p class="hint">Hint: You don't have the key in your inventory. Add it yourself.</p>
+        <div class="hint">Hint: You don't have the key in your inventory. Add it yourself to your LocalStorage.</div>
 
-        <p>The door mechanism checks your local storage credentials. Key: <code>doorStatus</code></p>
+        <p>Your local inventory is empty, but the door mechanism blindly trusts your storage. You must manually forge the <code>doorStatus</code> and declare it <code>unlocked</code>.</p>
         <button id="room-3-btn" onclick="checkRoom3()">CHECK DOOR STATUS</button>
         <p id="room-3-error" class="error-text"></p>
       </div>
@@ -330,7 +426,7 @@
              ========================================= -->
       <div id="room-4" class="room">
         <h2>Room 4: The Array Algorithm</h2>
-        <p class="hint">Hint: Execute the whiteboard logic.</p>
+        <div class="hint">Hint: Execute the whiteboard logic in your Console, or do the math manually.</div>
 
         <div class="whiteboard">
           <pre><code>const arr = [1, 2, 3, 4, 5];
@@ -342,7 +438,7 @@ const result = arr
 console.log(result);</code></pre>
         </div>
 
-        <p>What is the final output?</p>
+        <p>Can you compute the final output of this algorithm before the system does?</p>
         <input type="text" id="array-input" placeholder="OUTPUT VALUE" autocomplete="off" />
         <br />
         <button onclick="checkRoom4()">SUBMIT</button>
@@ -354,10 +450,9 @@ console.log(result);</code></pre>
              ========================================= -->
       <div id="room-5" class="room">
         <h2>Room 5: The Identity Forger</h2>
-        <p class="hint">Hint: The DOM is yours to control. Forge your clearance.</p>
+        <div class="hint">Hint: The DOM is yours to control. Use Elements inspector to forge your clearance text.</div>
 
-        <p>The scanner requires Admin privileges, but your current badge says otherwise.</p>
-        <p>Modify the badge text in the DOM to <code>ADMIN</code> to proceed.</p>
+        <p>The scanner requires Admin privileges, but you are merely a GUEST. The physical badge is locked, but its digital structure can be rewritten.</p>
         
         <div id="security-badge" class="badge">GUEST</div>
         <br />
@@ -371,8 +466,8 @@ console.log(result);</code></pre>
              ========================================= -->
       <div id="room-6" class="room">
         <h2>Room 6: The Invisible Ink</h2>
-        <p class="hint">Hint: Sometimes the answer is right in front of you. Try highlighting the space below.</p>
-        <p>Find the hidden password:</p>
+        <div class="hint">Hint: Sometimes the answer is right in front of you. Try highlighting the space below.</div>
+        <p>The password lies in the void below. Some things are hidden in plain sight, waiting to be highlighted.</p>
         
         <div style="color: var(--terminal-bg); font-weight: bold; margin: 20px 0; user-select: text; cursor: text;">SPECTER</div>
         
@@ -387,8 +482,9 @@ console.log(result);</code></pre>
              ========================================= -->
       <div id="room-7" class="room">
         <h2>Room 7: The Global Variable</h2>
-        <p class="hint">Hint: The system stores secrets globally. Check the window object for <code>secretPassword</code>.</p>
+        <div class="hint">Hint: The system stores secrets globally. Check the window object for <code>secretPassword</code>.</div>
         
+        <p>The system carelessly left its <code>secretPassword</code> exposed to the entire global window. Reach in and take it.</p>
         <input type="text" id="global-input" placeholder="ENTER GLOBAL PASSWORD" autocomplete="off" />
         <br />
         <button onclick="checkRoom7()">SUBMIT</button>
@@ -400,8 +496,8 @@ console.log(result);</code></pre>
              ========================================= -->
       <div id="room-8" class="room">
         <h2>Room 8: The Base64 Cipher</h2>
-        <p class="hint">Hint: A classic encoding method. Use <code>atob()</code> in the console or an online decoder.</p>
-        <p>Decipher the following string:</p>
+        <div class="hint">Hint: A classic encoding method. Use <code>atob()</code> in the console or an online decoder.</div>
+        <p>A classic encryption stands in your way. Decode this Base64 transmission to proceed.</p>
         <div class="badge">bWluZGNyYWZ0</div>
         <br />
         
@@ -416,8 +512,8 @@ console.log(result);</code></pre>
              ========================================= -->
       <div id="room-9" class="room">
         <h2>Room 9: The Modifier Key</h2>
-        <p class="hint">Hint: A simple click isn't enough. You must <b>Shift</b> your perspective.</p>
-        <p>Hold down the correct key while clicking the button below.</p>
+        <div class="hint">Hint: A simple click isn't enough. You must <b>Shift</b> your perspective before you click.</div>
+        <p>A simple click isn't enough. You must <i>Shift</i> your perspective before you click.</p>
         
         <button id="modifier-btn" onclick="checkRoom9(event)">SECURE OVERRIDE</button>
         <p id="room-9-error" class="error-text"></p>
@@ -428,11 +524,11 @@ console.log(result);</code></pre>
              ========================================= -->
       <div id="room-10" class="room">
         <h2>Room 10: The Window Resizer</h2>
-        <p class="hint">Hint: The viewport is too wide. Squish the browser width below 600px to reveal the code.</p>
+        <div class="hint">Hint: The viewport is too wide. Squish the browser width below 600px to reveal the code.</div>
         
         <div id="resize-secret" class="hidden-secret">REsponSiv3_W3b</div>
         
-        <p>Enter the responsive code:</p>
+        <p>The interface is too wide, hiding its secrets in the margins. Perhaps a much narrower perspective will reveal the responsive code.</p>
         <input type="text" id="resize-input" placeholder="CODE" autocomplete="off" />
         <br />
         <button onclick="checkRoom10()">SUBMIT</button>
@@ -444,8 +540,8 @@ console.log(result);</code></pre>
              ========================================= -->
       <div id="room-11" class="room">
         <h2>Room 11: The Cookie Monster</h2>
-        <p class="hint">Hint: Bake a cookie. Name it <code>auth</code> and set the value to <code>granted</code>.</p>
-        <p>Use the DevTools Application tab (or document.cookie in Console).</p>
+        <div class="hint">Hint: Bake a cookie. Name it <code>auth</code> and set the value to <code>granted</code>.</div>
+        <p>The system requires a sweet treat. Bake an <code>auth</code> cookie and ensure access is <code>granted</code>.</p>
         
         <button id="cookie-btn" onclick="checkRoom11()">CHECK COOKIES</button>
         <p id="room-11-error" class="error-text"></p>
@@ -456,8 +552,8 @@ console.log(result);</code></pre>
              ========================================= -->
       <div id="room-12" class="room">
         <h2>Room 12: The Keylogger</h2>
-        <p class="hint">Hint: Just start typing anywhere on the page. The system is listening for the word: HACK</p>
-        <p class="hint">Waiting for input...</p>
+        <div class="hint">Hint: Don't click anywhere. Just start typing anywhere on the page. The system is listening for the word: HACK</div>
+        <p>The system is blind, but it is quietly listening to every single keystroke. Tell it what you want to do.</p>
       </div>
 
       <!-- =========================================
@@ -465,11 +561,11 @@ console.log(result);</code></pre>
              ========================================= -->
       <div id="room-13" class="room">
         <h2>Room 13: The Broken CSS</h2>
-        <p class="hint">Hint: The code is here, but it's completely transparent. Fix the inline style in the Elements panel.</p>
+        <div class="hint">Hint: The code is here, but it's completely transparent. Fix the inline style opacity in the Elements panel.</div>
         
         <div id="opacity-secret" style="opacity: 0; font-size: 24px; font-weight: bold; margin: 20px 0;">GHOST_PROTOCOL</div>
         
-        <p>Enter the hidden text:</p>
+        <p>The text you seek is right in front of you, completely transparent. Restore its opacity to read it.</p>
         <input type="text" id="opacity-input" placeholder="ENTER VISIBLE TEXT" autocomplete="off" />
         <br />
         <button onclick="checkRoom13()">SUBMIT</button>
@@ -481,7 +577,7 @@ console.log(result);</code></pre>
              ========================================= -->
       <div id="room-14" class="room">
         <h2>Room 14: The Logic Gate</h2>
-        <p class="hint">Hint: Evaluate the boolean expression.</p>
+        <div class="hint">Hint: Evaluate the boolean expression carefully. Order of operations matters.</div>
         
         <div class="whiteboard">
           <pre><code>const a = true;
@@ -489,7 +585,7 @@ const b = false;
 const result = (a && b) || (a && !b);</code></pre>
         </div>
         
-        <p>What is the value of <code>result</code>?</p>
+        <p>The logic gates are tangled. Untie the boolean logic and determine the final outcome.</p>
         <input type="text" id="logic-input" placeholder="true or false" autocomplete="off" />
         <br />
         <button onclick="checkRoom14()">SUBMIT</button>
@@ -501,8 +597,8 @@ const result = (a && b) || (a && !b);</code></pre>
              ========================================= -->
       <div id="room-15" class="room">
         <h2>Room 15: The Patient Hacker</h2>
-        <p class="hint">Hint: Good things come to those who wait.</p>
-        <p>Stay on this screen and the system will eventually open.</p>
+        <div class="hint">Hint: Good things come to those who wait. Just sit and observe.</div>
+        <p>Patience is a virtue. Good things come to hackers who sit and wait.</p>
         
         <button id="patient-btn" disabled style="background: #333; color: #888; cursor: not-allowed;" onclick="checkRoom15()">PROCESSING...</button>
         <p id="room-15-error" class="error-text"></p>
@@ -513,8 +609,8 @@ const result = (a && b) || (a && !b);</code></pre>
              ========================================= -->
       <div id="room-16" class="room">
         <h2>Room 16: The Double Agent</h2>
-        <p class="hint">Hint: One click is an accident. Two clicks is a pattern.</p>
-        <p>The standard click event has been disabled. Find another way to trigger the button.</p>
+        <div class="hint">Hint: One click is an accident. Two clicks is a pattern.</div>
+        <p>One click is an accident. Two clicks is a pattern. The button is waiting for a pattern.</p>
         
         <button id="double-btn" ondblclick="checkRoom16()">SECURE OVERRIDE</button>
         <p id="room-16-error" class="error-text"></p>
@@ -525,9 +621,10 @@ const result = (a && b) || (a && !b);</code></pre>
              ========================================= -->
       <div id="room-17" class="room">
         <h2>Room 17: The Z-Index Blockade</h2>
-        <p class="hint">Hint: Something invisible is standing in your way. Inspect the area and remove the blockade.</p>
+        <div class="hint">Hint: Something invisible is standing in your way. Inspect the area and remove the HTML node blockade.</div>
         
         <div style="position: relative; display: inline-block; padding: 20px;">
+           <p>An invisible forcefield is blocking your physical clicks. You must rip it out of the HTML structure.</p>
            <!-- This blocks clicks to the button -->
            <div id="blocker-div" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; cursor: not-allowed;" onclick="showError('blocker-div', 'room-17-error', 'ACCESS DENIED: INVISIBLE FORCEFIELD DETECTED')"></div>
            <button onclick="checkRoom17()">INITIATE SEQUENCE</button>
@@ -540,7 +637,7 @@ const result = (a && b) || (a && !b);</code></pre>
              ========================================= -->
       <div id="room-18" class="room">
         <h2>Room 18: The JSON Parser</h2>
-        <p class="hint">Hint: Parse the data structure.</p>
+        <div class="hint">Hint: Parse the data structure. Arrays are 0-indexed.</div>
         
         <div class="whiteboard">
           <pre><code>const data = '{
@@ -553,7 +650,7 @@ const parsed = JSON.parse(data);
 console.log(parsed.agents[1].name);</code></pre>
         </div>
         
-        <p>What is the output of the console log?</p>
+        <p>The machines index starting from zero. Identify the chosen agent.</p>
         <input type="text" id="json-input" placeholder="OUTPUT" autocomplete="off" />
         <br />
         <button onclick="checkRoom18()">SUBMIT</button>
@@ -565,8 +662,8 @@ console.log(parsed.agents[1].name);</code></pre>
              ========================================= -->
       <div id="room-19" class="room">
         <h2>Room 19: The Hidden Input</h2>
-        <p class="hint">Hint: The input field is in the DOM, but its type prevents you from seeing it. Change its type attribute.</p>
-        <p>The password is: <code>ROOT_ACCESS</code></p>
+        <div class="hint">Hint: The input field is in the DOM, but its type prevents you from seeing it. Change its type attribute.</div>
+        <p>The password is <code>ROOT_ACCESS</code>. But the input field's state is completely hidden from view. You must change its true nature to see it.</p>
         
         <input type="hidden" id="hidden-input" placeholder="ENTER PASSWORD" autocomplete="off" />
         <br />
@@ -579,11 +676,9 @@ console.log(parsed.agents[1].name);</code></pre>
              ========================================= -->
       <div id="room-20" class="room">
         <h2>Room 20: The Regex Validator</h2>
-        <p class="hint">Hint: Match the Regular Expression pattern.</p>
+        <div class="hint">Hint: Match the Regular Expression pattern exactly.</div>
         
-        <p>The system requires a security code that strictly matches the following regex:</p>
-        <div class="badge">/^[A-Z]{3}[0-9]{3}$/</div>
-        <p>Provide a valid code to proceed.</p>
+        <p>The system demands absolute pattern compliance. Provide a code that perfectly matches the expression below.</p>
         
         <input type="text" id="regex-input" placeholder="ENTER VALID CODE" autocomplete="off" />
         <br />
@@ -596,8 +691,8 @@ console.log(parsed.agents[1].name);</code></pre>
              ========================================= -->
       <div id="room-21" class="room">
         <h2>Room 21: The Context Menu</h2>
-        <p class="hint">Hint: A standard left-click won't work here. Try the other button on your mouse.</p>
-        
+        <div class="hint">Hint: A standard left-click won't work here. Try the other button on your mouse.</div>
+        <p>A standard left-click won't work. You must view this button in an entirely different context menu.</p>
         <button id="context-btn" oncontextmenu="checkRoom21(event); return false;">SECURE OVERRIDE</button>
         <p id="room-21-error" class="error-text"></p>
       </div>
@@ -607,9 +702,9 @@ console.log(parsed.agents[1].name);</code></pre>
              ========================================= -->
       <div id="room-22" class="room">
         <h2>Room 22: The Hexadecimal</h2>
-        <p class="hint">Hint: Understand web colors.</p>
+        <div class="hint">Hint: Understand web colors. R, G, B channels.</div>
         
-        <p>What is the exact 6-character hex code for pure red?</p>
+        <p>The machine only understands colors through 6-character hexadecimal codes. What is the code for pure, unadulterated red?</p>
         <div style="width: 100px; height: 100px; background-color: #ff0000; margin: 15px auto; border: 2px solid #fff;"></div>
         
         <input type="text" id="hex-input" placeholder="#______" autocomplete="off" />
@@ -623,8 +718,8 @@ console.log(parsed.agents[1].name);</code></pre>
              ========================================= -->
       <div id="room-23" class="room">
         <h2>Room 23: The Console Error</h2>
-        <p class="hint">Hint: A critical fault occurred when you entered this room. Check your developer console for the red error log.</p>
-        <p>Enter the exact Error Code to clear the fault.</p>
+        <div class="hint">Hint: A critical fault occurred when you entered this room. Check your developer console for the red error log.</div>
+        <p>A critical fault occurred upon your entry. Check the system's error logs to identify the exact Error Code and clear the fault.</p>
         
         <input type="text" id="error-input" placeholder="ERROR CODE" autocomplete="off" />
         <br />
@@ -637,11 +732,9 @@ console.log(parsed.agents[1].name);</code></pre>
              ========================================= -->
       <div id="room-24" class="room">
         <h2>Room 24: The JSON Storage</h2>
-        <p class="hint">Hint: Inject a JSON object into your browser's Application storage.</p>
+        <div class="hint">Hint: Inject a JSON object into your browser's Application storage.</div>
         
-        <p>The system requires a configuration object in <code>localStorage</code>.</p>
-        <p>Key: <code>sysConfig</code></p>
-        <p>Value: <code>{"override": true}</code></p>
+        <p>The system is missing its configuration object in the local storage. Inject a valid JSON object into <code>sysConfig</code> declaring an <code>override</code> to be <code>true</code>.</p>
         
         <button id="json-store-btn" onclick="checkRoom24()">VERIFY STORAGE</button>
         <p id="room-24-error" class="error-text"></p>
@@ -652,14 +745,11 @@ console.log(parsed.agents[1].name);</code></pre>
              ========================================= -->
       <div id="room-25" class="room">
         <h2>Room 25: The Final Override</h2>
-        <p class="hint">Hint: Trigger the global override.</p>
+        <div class="hint">Hint: Execute the global override function in the console.</div>
 
-        <p>You have reached the core system. The interface is disabled.</p>
-        <p>
-          You must manually execute the global override function:
-          <code>triggerEscape()</code>
-        </p>
-        <p class="hint">Waiting for execution...</p>
+        <p>You have reached the core system, but the physical interface has been completely disabled.</p>
+        <p>You must reach into the console and manually execute the global override function: <code>triggerEscape()</code></p>
+        <p style="font-style: italic; color: #888;">Waiting for execution...</p>
       </div>
 
       <!-- =========================================
@@ -681,6 +771,7 @@ console.log(parsed.agents[1].name);</code></pre>
         <div style="margin-top: 30px; border: 1px solid var(--text-color); padding: 20px; background: rgba(0,255,0,0.1);">
           <p style="font-size: 20px; font-weight: bold; margin: 5px 0;">TIME TAKEN: <span id="final-time-taken">--:--</span></p>
           <p style="font-size: 18px; margin: 5px 0;">TIME REMAINING: <span id="final-time-remaining">--:--</span></p>
+          <p style="font-size: 24px; font-weight: bold; margin: 15px 0 5px 0; color: #00ff00;">FINAL SCORE: <span id="final-score">0</span></p>
         </div>
       </div>
     </div>
@@ -692,17 +783,50 @@ console.log(parsed.agents[1].name);</code></pre>
 
       // --- GAME STATE ---
       let timerInterval;
+      let currentScore = 0;
+      let hintsUsed = 0;
+      let audioCtx = null;
+      let droneOsc = null;
+      let themeColor = "#0f0";
+
+      const fakeJargon = [
+        "Bypassing firewall node...", "Injecting payload...", "Decrypting hash...",
+        "Rerouting mainframe power...", "Disabling security cameras...", "Accessing hidden sector...",
+        "Compiling exploit...", "Overriding manual protocols..."
+      ];
 
       // --- INITIALIZATION ---
       window.onload = function () {
         window.secretPassword = "CYBER_PUNK_2077";
+        
+        initMatrix();
+        initCursorTrail();
+        initHints();
+
+        // Attach audio init to document click to bypass browser autoplay rules
+        document.addEventListener('click', (e) => {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                startDrone();
+            }
+            if (e.target.tagName === 'BUTTON') playBeep();
+        });
+
+        const savedScore = localStorage.getItem("escapeScore");
+        if (savedScore) {
+          currentScore = parseInt(savedScore);
+          document.getElementById("score").innerText = currentScore;
+        }
+
+        const savedHints = localStorage.getItem("escapeHintsUsed");
+        if (savedHints) hintsUsed = parseInt(savedHints);
 
         const activeRoom = localStorage.getItem("currentRoom");
         const endTime = localStorage.getItem("escapeEndTime");
 
         if (activeRoom && endTime) {
           document.getElementById("intro-screen").classList.remove("active");
-          document.getElementById("timer-container").style.display = "block";
+          document.getElementById("timer-container").style.display = "flex";
           showRoom(activeRoom);
           
           document.body.classList.add("flicker");
@@ -717,7 +841,9 @@ console.log(parsed.agents[1].name);</code></pre>
           }
         } else {
           localStorage.removeItem("doorStatus"); 
-          localStorage.removeItem("sysConfig"); // For room 24
+          localStorage.removeItem("sysConfig");
+          localStorage.removeItem("escapeScore");
+          localStorage.removeItem("escapeHintsUsed");
           document.cookie = "auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
           runIntroTypewriter();
         }
@@ -730,13 +856,239 @@ console.log(parsed.agents[1].name);</code></pre>
             if (e.key.length === 1) {
               window.typedKeys += e.key.toUpperCase();
               if (window.typedKeys.includes("HACK")) {
-                showRoom("room-13");
+                advanceRoom("room-13");
                 window.typedKeys = ""; 
               }
             }
           }
         });
       };
+
+      // --- VISUAL & AUDIO FX ---
+
+      function initMatrix() {
+        const canvas = document.getElementById('matrixCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*<>[]{}".split("");
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+        for(let x = 0; x < columns; x++) drops[x] = 1;
+
+        function draw() {
+            ctx.fillStyle = "rgba(13, 17, 23, 0.1)"; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = themeColor;
+            ctx.font = fontSize + "px monospace";
+            for(let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(draw, 33);
+      }
+
+      function initCursorTrail() {
+        const canvas = document.createElement('canvas');
+        canvas.style.position = 'fixed';
+        canvas.style.top = '0';
+        canvas.style.left = '0';
+        canvas.style.width = '100vw';
+        canvas.style.height = '100vh';
+        canvas.style.pointerEvents = 'none';
+        canvas.style.zIndex = '9998';
+        document.body.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        const particles = [];
+        let mouseX = -100;
+        let mouseY = -100;
+
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            for(let i=0; i<2; i++) {
+                particles.push({
+                    x: mouseX,
+                    y: mouseY,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    life: 1,
+                    char: Math.random() > 0.5 ? "1" : "0"
+                });
+            }
+        });
+
+        function render() {
+            ctx.clearRect(0, 0, width, height);
+            for(let i=particles.length-1; i>=0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.02;
+                if(p.life <= 0) {
+                    particles.splice(i, 1);
+                } else {
+                    ctx.fillStyle = themeColor === "#0f0" ? `rgba(0, 255, 0, ${p.life})` : `rgba(255, 0, 60, ${p.life})`;
+                    ctx.font = "14px monospace";
+                    ctx.fillText(p.char, p.x, p.y);
+                }
+            }
+            requestAnimationFrame(render);
+        }
+        render();
+      }
+
+      function explodeParticles() {
+        const cx = window.innerWidth / 2;
+        const cy = window.innerHeight / 2;
+        for (let i = 0; i < 40; i++) {
+            const p = document.createElement("div");
+            p.innerText = Math.random() > 0.5 ? "1" : "0";
+            p.style.position = "fixed";
+            p.style.left = cx + "px";
+            p.style.top = cy + "px";
+            p.style.color = themeColor;
+            p.style.fontSize = (Math.random() * 15 + 10) + "px";
+            p.style.fontWeight = "bold";
+            p.style.pointerEvents = "none";
+            p.style.zIndex = 10001;
+            document.body.appendChild(p);
+
+            const angle = Math.random() * Math.PI * 2;
+            const velocity = Math.random() * 15 + 5;
+            let vx = Math.cos(angle) * velocity;
+            let vy = Math.sin(angle) * velocity;
+            let opacity = 1;
+            let x = cx;
+            let y = cy;
+
+            function animate() {
+                x += vx;
+                y += vy;
+                opacity -= 0.02;
+                p.style.transform = `translate(${x - cx}px, ${y - cy}px)`;
+                p.style.opacity = opacity;
+                if (opacity <= 0) p.remove();
+                else requestAnimationFrame(animate);
+            }
+            requestAnimationFrame(animate);
+        }
+      }
+
+      function startDrone() {
+          if (!audioCtx || droneOsc) return;
+          droneOsc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          droneOsc.type = 'triangle';
+          droneOsc.frequency.value = 55;
+          gain.gain.value = 0.05;
+          droneOsc.connect(gain);
+          gain.connect(audioCtx.destination);
+          droneOsc.start();
+      }
+
+      function playTone(freq, type, duration, vol=0.1) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      }
+
+      function playBeep() { playTone(800, 'sine', 0.1, 0.05); }
+      function playSuccess() { 
+          playTone(600, 'square', 0.1, 0.1); 
+          setTimeout(() => playTone(800, 'square', 0.2, 0.1), 100); 
+      }
+      function playError() { playTone(150, 'sawtooth', 0.3, 0.15); }
+
+      function printTerminalLog(msg) {
+        const term = document.getElementById("terminal-log");
+        if (term.style.display === "none" || term.style.display === "") {
+            term.style.display = "flex";
+        }
+        const line = document.createElement("div");
+        line.className = "log-line";
+        line.innerText = `> ${msg || fakeJargon[Math.floor(Math.random() * fakeJargon.length)]}`;
+        term.appendChild(line);
+        
+        while (term.children.length > 8) {
+            term.removeChild(term.firstChild);
+        }
+      }
+
+      // --- GAME FLOW ---
+
+      function updateHintButtonsText() {
+        const costText = hintsUsed < 3 ? "FREE" : "-50 PTS";
+        const hintsLeft = hintsUsed < 3 ? (3 - hintsUsed) : 0;
+        
+        document.getElementById('hints-counter').innerText = hintsUsed < 3 ? `${hintsLeft} FREE` : `0 FREE`;
+        
+        document.querySelectorAll('.hint-btn').forEach(btn => {
+            btn.innerText = `DECRYPT HINT (${costText})`;
+        });
+      }
+
+      function initHints() {
+        document.querySelectorAll('.hint').forEach((hintEl) => {
+            if(hintEl.dataset.initialized) return;
+            
+            const originalText = hintEl.innerHTML;
+            hintEl.innerHTML = '';
+            
+            const btn = document.createElement('button');
+            btn.className = 'hint-btn';
+            btn.style.fontSize = '12px';
+            btn.style.padding = '6px 12px';
+            btn.style.marginTop = '0';
+            btn.style.background = 'transparent';
+            btn.style.border = '1px dashed var(--text-color)';
+            
+            const textSpan = document.createElement('span');
+            textSpan.innerHTML = originalText;
+            textSpan.style.display = 'none';
+
+            btn.onclick = function() {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (hintsUsed < 3) {
+                    playBeep();
+                } else {
+                    updateScore(-50);
+                    playError(); 
+                }
+                hintsUsed++;
+                localStorage.setItem("escapeHintsUsed", hintsUsed);
+                updateHintButtonsText();
+
+                textSpan.style.display = 'inline';
+                btn.style.display = 'none';
+            };
+            
+            hintEl.appendChild(btn);
+            hintEl.appendChild(textSpan);
+            hintEl.dataset.initialized = "true";
+        });
+        updateHintButtonsText();
+      }
 
       function runIntroTypewriter() {
         const text =
@@ -754,6 +1106,7 @@ console.log(parsed.agents[1].name);</code></pre>
             i++;
             setTimeout(typeWriter, 40);
           } else {
+            document.getElementById("intro-rules").style.display = "block";
             document.getElementById("start-btn").style.display = "inline-block";
           }
         }
@@ -764,9 +1117,16 @@ console.log(parsed.agents[1].name);</code></pre>
         const endTime = Date.now() + 45 * 60 * 1000;
         localStorage.setItem("escapeEndTime", endTime);
         localStorage.setItem("currentRoom", "room-1");
+        
+        currentScore = 0;
+        hintsUsed = 0;
+        localStorage.setItem("escapeScore", currentScore);
+        localStorage.setItem("escapeHintsUsed", hintsUsed);
+        updateHintButtonsText();
+        document.getElementById("score").innerText = "0";
 
         showRoom("room-1");
-        document.getElementById("timer-container").style.display = "block";
+        document.getElementById("timer-container").style.display = "flex";
         document.body.classList.add("flicker");
 
         timerInterval = setInterval(updateTimer, 1000);
@@ -792,12 +1152,58 @@ console.log(parsed.agents[1].name);</code></pre>
         document.getElementById("timer").innerText = `${m}:${s}`;
       }
 
+      function updateScore(points) {
+        currentScore += points;
+        localStorage.setItem("escapeScore", currentScore);
+        const scoreEl = document.getElementById("score");
+        scoreEl.innerText = currentScore;
+        
+        // Visual feedback
+        scoreEl.style.color = points > 0 ? "#00ff00" : "#ff003c";
+        setTimeout(() => { scoreEl.style.color = "var(--text-color)"; }, 500);
+      }
+
+      function triggerMalfunction() {
+          document.body.classList.add('malfunction');
+          playError();
+          printTerminalLog("WARNING: UNAUTHORIZED INTRUSION. TRACING IP ADDRESS...", true);
+          setTimeout(() => {
+              document.body.classList.remove('malfunction');
+          }, 600);
+      }
+
+      function triggerRedAlert() {
+          themeColor = "#ff003c";
+          document.body.style.setProperty('--text-color', themeColor);
+          if (droneOsc) {
+              droneOsc.frequency.linearRampToValueAtTime(110, audioCtx.currentTime + 2); 
+          }
+          printTerminalLog("CRITICAL: CORE BREACH DETECTED. ALL SYSTEMS COMPROMISED.", true);
+      }
+
       function showRoom(roomId) {
         document.querySelectorAll(".room").forEach((r) => r.classList.remove("active"));
-        document.getElementById(roomId).classList.add("active");
+        const room = document.getElementById(roomId);
+        room.classList.add("active");
 
         if (roomId !== "intro-screen" && roomId !== "game-over" && roomId !== "victory-screen") {
            localStorage.setItem("currentRoom", roomId);
+        }
+
+        if(["room-5", "room-10", "room-15", "room-20"].includes(roomId)) {
+            triggerMalfunction();
+        }
+        if(roomId === "room-25") {
+            triggerRedAlert();
+        }
+
+        // Update Progress Bar UI
+        if(roomId.startsWith("room-")) {
+           const roomNum = parseInt(roomId.split("-")[1]);
+           if(roomNum <= 25) {
+               document.getElementById("room-counter").innerText = `${roomNum}/25`;
+               document.getElementById("progress-bar").style.width = `${(roomNum / 25) * 100}%`;
+           }
         }
 
         if (roomId === "room-2") {
@@ -829,6 +1235,20 @@ console.log(parsed.agents[1].name);</code></pre>
         }
       }
 
+      function advanceRoom(roomId) {
+        updateScore(100);
+        playSuccess();
+        explodeParticles();
+        printTerminalLog();
+        
+        // Retrigger cinematic glitch
+        document.body.classList.remove("flicker");
+        void document.body.offsetWidth;
+        document.body.classList.add("flicker");
+
+        showRoom(roomId);
+      }
+
       function showError(elementId, errorTextId, message) {
         const el = document.getElementById(elementId);
         const errorEl = document.getElementById(errorTextId);
@@ -839,138 +1259,137 @@ console.log(parsed.agents[1].name);</code></pre>
 
         errorEl.innerText = message;
         setTimeout(() => (errorEl.innerText = ""), 3000);
-      }
-      
-      function resetGame() {
-        localStorage.clear();
-        document.cookie = "auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        location.reload();
+        
+        // Deduct points for a wrong guess
+        if (elementId !== 'blocker-div') {
+            updateScore(-20);
+        }
+        playError();
       }
 
       // --- PUZZLE VALIDATION LOGIC ---
 
       function checkRoom1() {
         const input = document.getElementById("pin-input").value.trim();
-        if (input === "8492") showRoom("room-2");
+        if (input === "8492") advanceRoom("room-2");
         else showError("pin-input", "room-1-error", "ACCESS DENIED: INVALID PIN");
       }
 
       function checkRoom2() {
         const input = document.getElementById("token-input").value.trim().toUpperCase();
-        if (input === "CYBER2026") showRoom("room-3");
+        if (input === "CYBER2026") advanceRoom("room-3");
         else showError("token-input", "room-2-error", "ACCESS DENIED: UNKNOWN TOKEN");
       }
 
       function checkRoom3() {
         const status = localStorage.getItem("doorStatus");
-        if (status === "unlocked") showRoom("room-4");
+        if (status === "unlocked") advanceRoom("room-4");
         else showError("room-3-btn", "room-3-error", "ACCESS DENIED: DOOR IS LOCKED");
       }
 
       function checkRoom4() {
         const input = document.getElementById("array-input").value.trim();
-        if (input === "24") showRoom("room-5");
+        if (input === "24") advanceRoom("room-5");
         else showError("array-input", "room-4-error", "ACCESS DENIED: INCORRECT COMPUTATION");
       }
 
       function checkRoom5() {
         const badgeText = document.getElementById("security-badge").innerText.trim().toUpperCase();
-        if (badgeText === "ADMIN") showRoom("room-6");
+        if (badgeText === "ADMIN") advanceRoom("room-6");
         else showError("security-badge", "room-5-error", "ACCESS DENIED: INSUFFICIENT CLEARANCE");
       }
 
       function checkRoom6() {
         const input = document.getElementById("ink-input").value.trim().toUpperCase();
-        if (input === "SPECTER") showRoom("room-7");
+        if (input === "SPECTER") advanceRoom("room-7");
         else showError("ink-input", "room-6-error", "ACCESS DENIED: INCORRECT PASSWORD");
       }
 
       function checkRoom7() {
         const input = document.getElementById("global-input").value.trim();
-        if (input === window.secretPassword) showRoom("room-8");
+        if (input === window.secretPassword) advanceRoom("room-8");
         else showError("global-input", "room-7-error", "ACCESS DENIED: INCORRECT PASSWORD");
       }
 
       function checkRoom8() {
         const input = document.getElementById("base64-input").value.trim().toLowerCase();
-        if (input === "mindcraft") showRoom("room-9");
+        if (input === "mindcraft") advanceRoom("room-9");
         else showError("base64-input", "room-8-error", "ACCESS DENIED: DECRYPTION FAILED");
       }
 
       function checkRoom9(event) {
-        if (event.shiftKey) showRoom("room-10");
+        if (event.shiftKey) advanceRoom("room-10");
         else showError("modifier-btn", "room-9-error", "ACCESS DENIED: MODIFIER KEY MISSING");
       }
 
       function checkRoom10() {
         const input = document.getElementById("resize-input").value.trim();
-        if (input === "REsponSiv3_W3b") showRoom("room-11");
+        if (input === "REsponSiv3_W3b") advanceRoom("room-11");
         else showError("resize-input", "room-10-error", "ACCESS DENIED: INVALID CODE");
       }
 
       function checkRoom11() {
-        if (document.cookie.includes("auth=granted")) showRoom("room-12");
+        if (document.cookie.includes("auth=granted")) advanceRoom("room-12");
         else showError("cookie-btn", "room-11-error", "ACCESS DENIED: MISSING AUTH COOKIE");
       }
 
       function checkRoom13() {
         const input = document.getElementById("opacity-input").value.trim().toUpperCase();
-        if (input === "GHOST_PROTOCOL") showRoom("room-14");
+        if (input === "GHOST_PROTOCOL") advanceRoom("room-14");
         else showError("opacity-input", "room-13-error", "ACCESS DENIED: INVALID TEXT");
       }
 
       function checkRoom14() {
         const input = document.getElementById("logic-input").value.trim().toLowerCase();
-        if (input === "true") showRoom("room-15");
+        if (input === "true") advanceRoom("room-15");
         else showError("logic-input", "room-14-error", "ACCESS DENIED: LOGIC ERROR");
       }
 
       function checkRoom15() {
-        showRoom("room-16");
+        advanceRoom("room-16");
       }
 
-      // NEW ROOMS (16-24)
       function checkRoom16() {
-        showRoom("room-17");
+        advanceRoom("room-17");
       }
 
       function checkRoom17() {
-        showRoom("room-18");
+        advanceRoom("room-18");
       }
 
       function checkRoom18() {
         const input = document.getElementById("json-input").value.trim().toLowerCase();
-        if (input === "trinity") showRoom("room-19");
+        if (input === "trinity") advanceRoom("room-19");
         else showError("json-input", "room-18-error", "ACCESS DENIED: INCORRECT DATA");
       }
 
       function checkRoom19() {
         const input = document.getElementById("hidden-input").value.trim().toUpperCase();
-        if (input === "ROOT_ACCESS") showRoom("room-20");
+        if (input === "ROOT_ACCESS") advanceRoom("room-20");
         else showError("hidden-input", "room-19-error", "ACCESS DENIED: INCORRECT PASSWORD");
       }
 
       function checkRoom20() {
         const input = document.getElementById("regex-input").value.trim();
         const regex = /^[A-Z]{3}[0-9]{3}$/;
-        if (regex.test(input)) showRoom("room-21");
+        if (regex.test(input)) advanceRoom("room-21");
         else showError("regex-input", "room-20-error", "ACCESS DENIED: PATTERN MISMATCH");
       }
 
       function checkRoom21(event) {
         event.preventDefault(); 
-        showRoom("room-22");
+        advanceRoom("room-22");
       }
 
       function checkRoom22() {
         const input = document.getElementById("hex-input").value.trim().toLowerCase();
-        if (input === "#ff0000" || input === "ff0000") showRoom("room-23");
+        if (input === "#ff0000" || input === "ff0000") advanceRoom("room-23");
         else showError("hex-input", "room-22-error", "ACCESS DENIED: INCORRECT COLOR CODE");
       }
 
       function checkRoom23() {
         const input = document.getElementById("error-input").value.trim().toUpperCase();
-        if (input === "505_GATEWAY") showRoom("room-24");
+        if (input === "505_GATEWAY") advanceRoom("room-24");
         else showError("error-input", "room-23-error", "ACCESS DENIED: UNKNOWN ERROR CODE");
       }
 
@@ -979,7 +1398,7 @@ console.log(parsed.agents[1].name);</code></pre>
            const val = localStorage.getItem("sysConfig");
            const parsed = JSON.parse(val);
            if (parsed && parsed.override === true) {
-              showRoom("room-25");
+              advanceRoom("room-25");
            } else {
               showError("json-store-btn", "room-24-error", "ACCESS DENIED: INVALID CONFIGURATION");
            }
@@ -994,6 +1413,9 @@ console.log(parsed.agents[1].name);</code></pre>
           clearInterval(timerInterval); 
           document.body.classList.remove("flicker");
           document.getElementById("timer-container").style.display = "none"; 
+          document.getElementById("terminal-log").style.display = "none";
+          playSuccess();
+          explodeParticles();
           
           // Calculate final times
           const endTime = parseInt(localStorage.getItem("escapeEndTime"));
@@ -1009,9 +1431,11 @@ console.log(parsed.agents[1].name);</code></pre>
           
           document.getElementById("final-time-remaining").innerText = `${leftM}:${leftS}`;
           document.getElementById("final-time-taken").innerText = `${takenM}:${takenS}`;
+          document.getElementById("final-score").innerText = currentScore;
 
           localStorage.removeItem("currentRoom");
           localStorage.removeItem("escapeEndTime");
+          localStorage.removeItem("escapeScore");
 
           showRoom("victory-screen");
           console.log(
