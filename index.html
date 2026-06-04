@@ -361,9 +361,43 @@
 
     <div id="game-container">
       <!-- =========================================
+             ROLE SELECTION SCREEN
+             ========================================= -->
+      <div id="role-selection" class="room active">
+        <h2>IDENTIFICATION REQUIRED</h2>
+        <p>Please select your access level:</p>
+        <button onclick="selectRole('student')">STUDENT</button>
+        <button onclick="selectRole('admin')">ADMIN</button>
+      </div>
+
+      <!-- =========================================
+             STUDENT LOGIN
+             ========================================= -->
+      <div id="student-login" class="room">
+        <h2>STUDENT ACCESS</h2>
+        <p>Enter your alias to proceed:</p>
+        <input type="text" id="student-name" placeholder="HACKER ALIAS" autocomplete="off" />
+        <br />
+        <button onclick="startStudent()">ENTER SYSTEM</button>
+        <p id="student-error" class="error-text"></p>
+      </div>
+
+      <!-- =========================================
+             ADMIN LOGIN
+             ========================================= -->
+      <div id="admin-login" class="room">
+        <h2>ADMIN ACCESS</h2>
+        <p>Enter authorization code:</p>
+        <input type="password" id="admin-pass" placeholder="PASSWORD" autocomplete="off" />
+        <br />
+        <button onclick="verifyAdmin()">VERIFY</button>
+        <p id="admin-error" class="error-text"></p>
+      </div>
+
+      <!-- =========================================
              INTRO SCREEN
              ========================================= -->
-      <div id="intro-screen" class="room active">
+      <div id="intro-screen" class="room">
         <h2 id="intro-text"></h2>
         <div id="intro-rules" style="display: none; text-align: left; margin: 20px 0; padding: 15px; border: 1px dashed var(--text-color); background: rgba(0, 255, 0, 0.05);">
             <h3 style="margin-top: 0;">RULES OF ENGAGEMENT:</h3>
@@ -776,6 +810,7 @@ console.log(parsed.agents[1].name);</code></pre>
       </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script>
       /* =========================================
          JAVASCRIPT LOGIC
@@ -783,6 +818,8 @@ console.log(parsed.agents[1].name);</code></pre>
 
       // --- GAME STATE ---
       let timerInterval;
+      let socket = null;
+      let studentName = "";
       let currentScore = 0;
       let hintsUsed = 0;
       let audioCtx = null;
@@ -794,6 +831,55 @@ console.log(parsed.agents[1].name);</code></pre>
         "Rerouting mainframe power...", "Disabling security cameras...", "Accessing hidden sector...",
         "Compiling exploit...", "Overriding manual protocols..."
       ];
+
+      function selectRole(role) {
+        if (role === 'student') {
+          showRoom('student-login');
+        } else {
+          showRoom('admin-login');
+        }
+      }
+
+      function startStudent() {
+        const name = document.getElementById('student-name').value.trim();
+        if (!name) {
+          showError('student-name', 'student-error', 'NAME REQUIRED');
+          return;
+        }
+        studentName = name;
+        localStorage.setItem("studentName", studentName);
+        
+        try {
+            socket = io();
+            socket.emit('student_join', { name: studentName });
+        } catch (e) {
+            console.warn("Socket connection failed. Playing offline.");
+        }
+        
+        showRoom('intro-screen');
+        runIntroTypewriter();
+      }
+
+      function verifyAdmin() {
+        const pass = document.getElementById('admin-pass').value;
+        if (pass === 'admin123') { 
+           window.location.href = '/admin';
+        } else {
+           showError('admin-pass', 'admin-error', 'ACCESS DENIED');
+        }
+      }
+
+      function emitProgress() {
+          if (socket) {
+              const timeText = document.getElementById('timer').innerText;
+              const currentRoom = localStorage.getItem('currentRoom') || 'intro-screen';
+              socket.emit('progress_update', {
+                  score: currentScore,
+                  room: currentRoom,
+                  time_left: timeText
+              });
+          }
+      }
 
       // --- INITIALIZATION ---
       window.onload = function () {
@@ -825,7 +911,7 @@ console.log(parsed.agents[1].name);</code></pre>
         const endTime = localStorage.getItem("escapeEndTime");
 
         if (activeRoom && endTime) {
-          document.getElementById("intro-screen").classList.remove("active");
+          document.getElementById("role-selection").classList.remove("active");
           document.getElementById("timer-container").style.display = "flex";
           showRoom(activeRoom);
           
@@ -839,13 +925,23 @@ console.log(parsed.agents[1].name);</code></pre>
             timerInterval = setInterval(updateTimer, 1000);
             updateTimer(); 
           }
+
+          // Restore socket connection if returning
+          try {
+              socket = io();
+              studentName = localStorage.getItem("studentName") || "Unknown Hacker";
+              socket.emit('student_join', { name: studentName });
+          } catch (e) {
+              console.warn("Socket connection failed. Playing offline.");
+          }
         } else {
           localStorage.removeItem("doorStatus"); 
           localStorage.removeItem("sysConfig");
           localStorage.removeItem("escapeScore");
           localStorage.removeItem("escapeHintsUsed");
+          localStorage.removeItem("studentName");
           document.cookie = "auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-          runIntroTypewriter();
+          // Waiting for user to select role and login
         }
 
         // Room 12 Keylogger
@@ -1130,6 +1226,7 @@ console.log(parsed.agents[1].name);</code></pre>
         document.body.classList.add("flicker");
 
         timerInterval = setInterval(updateTimer, 1000);
+        setInterval(emitProgress, 5000);
         updateTimer();
       }
 
@@ -1143,6 +1240,9 @@ console.log(parsed.agents[1].name);</code></pre>
           document.body.classList.remove("flicker");
           showRoom("game-over");
           document.getElementById("timer").innerText = "00:00";
+          if (socket) {
+              socket.emit('student_finish', { status: 'Game Over', score: currentScore, time_left: '00:00' });
+          }
           return;
         }
 
@@ -1247,6 +1347,7 @@ console.log(parsed.agents[1].name);</code></pre>
         document.body.classList.add("flicker");
 
         showRoom(roomId);
+        emitProgress();
       }
 
       function showError(elementId, errorTextId, message) {
@@ -1438,6 +1539,9 @@ console.log(parsed.agents[1].name);</code></pre>
           localStorage.removeItem("escapeScore");
 
           showRoom("victory-screen");
+          if (socket) {
+              socket.emit('student_finish', { status: 'Escaped', score: currentScore, time_left: document.getElementById('final-time-remaining').innerText });
+          }
           console.log(
             "%cOVERRIDE SUCCESSFUL. Welcome, Admin.",
             "color: #00ff00; font-size: 18px; font-weight: bold;",
