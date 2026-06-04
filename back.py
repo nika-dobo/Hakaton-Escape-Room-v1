@@ -61,7 +61,7 @@ def handle_student_join(data):
         'status': 'Playing',
         'time_left': '45:00'
     }
-    emit('admin_update', list(students.values()), broadcast=True)
+    emit_admin_update()
 
 @socketio.on('progress_update')
 def handle_progress_update(data):
@@ -70,7 +70,11 @@ def handle_progress_update(data):
         student['score'] = data.get('score', student['score'])
         student['room'] = data.get('room', student['room'])
         student['time_left'] = data.get('time_left', student['time_left'])
-        emit('admin_update', list(students.values()), broadcast=True)
+        emit_admin_update()
+
+@socketio.on('request_admin_update')
+def handle_admin_request():
+    emit_admin_update()
 
 @socketio.on('student_finish')
 def handle_student_finish(data):
@@ -79,7 +83,10 @@ def handle_student_finish(data):
         student['status'] = data.get('status', 'Finished')
         student['score'] = data.get('score', student['score'])
         student['time_left'] = data.get('time_left', student['time_left'])
-        emit('admin_update', list(students.values()), broadcast=True)
+        emit_admin_update()
+
+def emit_admin_update():
+    emit('admin_update', list(students.values()), broadcast=True)
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, host='0.0.0.0', port=5000)

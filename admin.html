@@ -281,6 +281,7 @@ Since this game is meant to teach browser Developer Tools (DevTools) and web con
       }
 
       const socket = io();
+      socket.emit('request_admin_update');
       
       socket.on('admin_update', function(students) {
         const tbody = document.getElementById('student-table');

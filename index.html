@@ -898,6 +898,9 @@ console.log(parsed.agents[1].name);</code></pre>
             if (e.target.tagName === 'BUTTON') playBeep();
         });
 
+        // Periodically push progress to server so Admin dashboard updates in real-time even when idle
+        setInterval(emitProgress, 5000);
+
         const savedScore = localStorage.getItem("escapeScore");
         if (savedScore) {
           currentScore = parseInt(savedScore);
