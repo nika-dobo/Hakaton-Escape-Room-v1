@@ -104,9 +104,9 @@
       </table>
 
       <div class="actions">
-        <a href="/download_answers" class="btn">Download Answer Key</a>
-        <a href="/export_students" class="btn">Export Student Data</a>
-        <a href="/" class="btn">Back to Login</a>
+        <a href="answers" class="btn" download="answers.txt">Download Answer Key</a>
+        <a href="javascript:void(0)" onclick="exportData()" class="btn">Export Student Data</a>
+        <a href="index.html" class="btn">Back to Login</a>
       </div>
     </div>
 
@@ -138,6 +138,18 @@
           tbody.appendChild(row);
         });
       });
+
+      function exportData() {
+          fetch('/export_students').then(res => {
+              if (res.ok) {
+                  window.location.href = '/export_students';
+              } else {
+                  alert('Exporting student data requires the Python backend server to be running. This feature is not available on simple static hosting.');
+              }
+          }).catch(err => {
+              alert('Exporting student data requires the Python backend server to be running. This feature is not available on simple static hosting.');
+          });
+      }
     </script>
   </body>
 </html>
