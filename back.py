@@ -89,4 +89,4 @@ def emit_admin_update():
     emit('admin_update', list(students.values()), broadcast=True)
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)
