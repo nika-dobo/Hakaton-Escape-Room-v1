@@ -66,8 +66,37 @@
       button:hover, a.btn:hover {
         background: var(--text-color);
         color: var(--bg-color);
-        box-shadow: 0 0 15px var(--text-color);
+        box-shadow: 0 0 10px var(--text-color);
       }
+
+      .kick-btn {
+          background: transparent;
+          border: 1px solid var(--error-color);
+          color: var(--error-color);
+          padding: 5px 10px;
+          cursor: pointer;
+          font-family: inherit;
+          text-transform: uppercase;
+          transition: all 0.2s;
+          font-size: 12px;
+      }
+      .kick-btn:hover {
+          background: var(--error-color);
+          color: #fff;
+          box-shadow: 0 0 10px var(--error-color);
+      }
+      
+      .kick-all-btn {
+          margin-bottom: 20px;
+          border-color: var(--error-color);
+          color: var(--error-color);
+      }
+      .kick-all-btn:hover {
+          background: var(--error-color);
+          color: #fff;
+          box-shadow: 0 0 15px var(--error-color);
+      }
+
       /* Modal Styles */
       .modal {
         display: none;
@@ -135,16 +164,20 @@
             <th>Current Node</th>
             <th>Score</th>
             <th>Time Left</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody id="student-table">
-          <tr><td colspan="5" style="text-align: center;">Waiting for incoming connections...</td></tr>
+          <tr><td colspan="6" style="text-align: center;">Waiting for incoming connections...</td></tr>
         </tbody>
       </table>
 
+      <div style="text-align: center; margin-top: 30px;">
+        <button class="btn" onclick="openAnswers()">View Answers Key</button>
+        <button class="btn" onclick="exportData()">Export Student Data (CSV)</button>
+        <button class="btn kick-all-btn" onclick="kickAllStudents()">KICK ALL STUDENTS</button>
+      </div>
       <div class="actions">
-        <a href="javascript:void(0)" onclick="openAnswers()" class="btn">View Answer Key</a>
-        <a href="javascript:void(0)" onclick="exportData()" class="btn">Export Student Data</a>
         <a href="index.html" class="btn">Back to Login</a>
       </div>
     </div>
@@ -286,7 +319,7 @@ Since this game is meant to teach browser Developer Tools (DevTools) and web con
       socket.on('admin_update', function(students) {
         const tbody = document.getElementById('student-table');
         if (students.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Waiting for incoming connections...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Waiting for incoming connections...</td></tr>';
             return;
         }
         tbody.innerHTML = '';
@@ -303,6 +336,9 @@ Since this game is meant to teach browser Developer Tools (DevTools) and web con
             <td>${student.room}</td>
             <td>${student.score}</td>
             <td>${student.time_left}</td>
+            <td>
+              <button class="kick-btn" onclick="kickStudent('${student.id}')">KICK</button>
+            </td>
           `;
           tbody.appendChild(row);
         });
@@ -318,6 +354,18 @@ Since this game is meant to teach browser Developer Tools (DevTools) and web con
           }).catch(err => {
               alert('Exporting student data requires the Python backend server to be running. This feature is not available on simple static hosting.');
           });
+      }
+
+      function kickStudent(sid) {
+          if (confirm("Are you sure you want to kick this student? Their game will be immediately terminated.")) {
+              socket.emit('kick_student', { sid: sid });
+          }
+      }
+
+      function kickAllStudents() {
+          if (confirm("WARNING: Are you sure you want to kick EVERYONE? This will terminate all active games!")) {
+              socket.emit('kick_all');
+          }
       }
     </script>
   </body>

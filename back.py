@@ -85,6 +85,21 @@ def handle_student_finish(data):
         student['time_left'] = data.get('time_left', student['time_left'])
         emit_admin_update()
 
+@socketio.on('kick_student')
+def handle_kick_student(data):
+    sid_to_kick = data.get('sid')
+    if sid_to_kick in students:
+        emit('force_disconnect', {}, to=sid_to_kick)
+        del students[sid_to_kick]
+        emit_admin_update()
+
+@socketio.on('kick_all')
+def handle_kick_all():
+    for sid in list(students.keys()):
+        emit('force_disconnect', {}, to=sid)
+    students.clear()
+    emit_admin_update()
+
 def emit_admin_update():
     emit('admin_update', list(students.values()), broadcast=True)
 

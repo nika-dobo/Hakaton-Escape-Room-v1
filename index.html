@@ -895,6 +895,12 @@ console.log(parsed.agents[1].name);</code></pre>
             if (existingName) {
                 socket.emit('student_join', { name: existingName });
             }
+            
+            socket.on('force_disconnect', function() {
+                alert("You have been KICKED from the system by the Administrator.");
+                localStorage.clear();
+                window.location.reload();
+            });
         } catch (e) {
             console.warn("Socket connection failed.");
         }
