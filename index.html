@@ -850,7 +850,7 @@ console.log(parsed.agents[1].name);</code></pre>
         localStorage.setItem("studentName", studentName);
         
         try {
-            socket = io();
+            if (!socket) socket = io();
             socket.emit('student_join', { name: studentName });
         } catch (e) {
             console.warn("Socket connection failed. Playing offline.");
@@ -888,6 +888,16 @@ console.log(parsed.agents[1].name);</code></pre>
         initMatrix();
         initCursorTrail();
         initHints();
+
+        try {
+            socket = io();
+            const existingName = localStorage.getItem("studentName");
+            if (existingName) {
+                socket.emit('student_join', { name: existingName });
+            }
+        } catch (e) {
+            console.warn("Socket connection failed.");
+        }
 
         // Attach audio init to document click to bypass browser autoplay rules
         document.addEventListener('click', (e) => {
