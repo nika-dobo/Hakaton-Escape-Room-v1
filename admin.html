@@ -68,6 +68,45 @@
         color: var(--bg-color);
         box-shadow: 0 0 15px var(--text-color);
       }
+      /* Modal Styles */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 10000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.8);
+      }
+      .modal-content {
+        background-color: var(--bg-color);
+        margin: 5% auto;
+        padding: 20px;
+        border: 2px solid var(--text-color);
+        width: 80%;
+        max-width: 800px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 0 20px var(--text-color);
+      }
+      .close-btn {
+        color: var(--error-color);
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      .close-btn:hover {
+        text-shadow: 0 0 10px var(--error-color);
+      }
+      #answersText {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        font-family: inherit;
+        color: #ddd;
+      }
+
       /* CRT Scanline Effect */
       .crt::before {
         content: " ";
@@ -104,14 +143,143 @@
       </table>
 
       <div class="actions">
-        <a href="answers" class="btn" download="answers.txt">Download Answer Key</a>
+        <a href="javascript:void(0)" onclick="openAnswers()" class="btn">View Answer Key</a>
         <a href="javascript:void(0)" onclick="exportData()" class="btn">Export Student Data</a>
         <a href="index.html" class="btn">Back to Login</a>
       </div>
     </div>
 
+    <!-- Answers Modal -->
+    <div id="answersModal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn" onclick="closeAnswers()">&times;</span>
+        <h2 style="margin-top:0; border-bottom:1px solid #0f0; padding-bottom:10px;">Answer Key & Walkthrough</h2>
+        <pre id="answersText"># Digital Escape Room - Complete Answer Key & Teacher Walkthrough
+
+This document contains the solutions and the required steps for the student to beat all 25 puzzle rooms in the Digital Escape Room. 
+
+Since this game is meant to teach browser Developer Tools (DevTools) and web concepts, the "How to solve" section explains the technical action the student must take.
+
+---
+
+### Room 1: The Inspector
+* **Answer:** `8492`
+* **How to solve:** Right-click anywhere on the page and select **Inspect** (or press F12). Look at the HTML code (DOM) under the Elements tab. Find the hidden `<div>` with `id="secret-pin"`. Type the number found inside it into the input box.
+
+### Room 2: The Console Whisperer
+* **Answer:** `CYBER2026`
+* **How to solve:** Open DevTools and navigate to the **Console** tab. You will see a green system message logged there that says "Access Token: CYBER2026".
+
+### Room 3: The Memory Storage
+* **Answer:** (No typing required, just a button click)
+* **How to solve:** Open DevTools and go to the **Application** tab (or Storage tab in Firefox). Under **Local Storage**, add a new Key/Value pair. Key: `doorStatus` | Value: `unlocked`. Then click the "CHECK DOOR STATUS" button.
+
+### Room 4: The Array Algorithm
+* **Answer:** `24`
+* **How to solve:** The student can either calculate the math manually (`[1,2,3,4,5]` * 2 = `[2,4,6,8,10]`. Keep only > 5 = `[6,8,10]`. Sum them = `24`), OR they can simply type the exact code block into the Console tab and press Enter to see the output.
+
+### Room 5: The Identity Forger
+* **Answer:** Modify HTML directly.
+* **How to solve:** Inspect the badge element that says "GUEST". In the Elements tab, double-click the word "GUEST" and change it to `ADMIN`. Hit Enter, then click the "SCAN BADGE" button on the page.
+
+### Room 6: The Invisible Ink
+* **Answer:** `SPECTER`
+* **How to solve:** Use the mouse to highlight/select the empty space between the hint and the input box. The text is the same color as the background.
+
+### Room 7: The Global Variable
+* **Answer:** `CYBER_PUNK_2077`
+* **How to solve:** Open the Console tab and type `window.secretPassword` (or just `secretPassword`) and press Enter. The console will return the string.
+
+### Room 8: The Base64 Cipher
+* **Answer:** `mindcraft`
+* **How to solve:** Use a Base64 decoder. Students can do this natively in the Console by typing `atob("bWluZGNyYWZ0")` and pressing Enter.
+
+### Room 9: The Modifier Key
+* **Answer:** Hold Shift + Click
+* **How to solve:** Hold down the **Shift** key on the physical keyboard while left-clicking the "SECURE OVERRIDE" button.
+
+### Room 10: The Window Resizer
+* **Answer:** `REsponSiv3_W3b`
+* **How to solve:** Un-maximize the browser window and drag the edges to make it very narrow (like a mobile phone screen width). A CSS Media Query will trigger and reveal the hidden text.
+
+### Room 11: The Cookie Monster
+* **Answer:** Set a Cookie.
+* **How to solve:** Open the Application tab in DevTools, go to **Cookies**. Add a new cookie with Name: `auth` and Value: `granted`. Alternatively, type `document.cookie = "auth=granted"` in the Console. Then click the button.
+
+### Room 12: The Keylogger
+* **Answer:** Type `HACK`
+* **How to solve:** Do not click on anything. Just type the letters `H`, `A`, `C`, `K` on the keyboard anywhere on the page. A global event listener is tracking the keystrokes.
+
+### Room 13: The Broken CSS
+* **Answer:** `GHOST_PROTOCOL`
+* **How to solve:** Inspect the area below the hint. In the HTML, find the div with `style="opacity: 0"`. The student can read the text directly from the HTML code, or they can use the CSS Styles panel in DevTools to uncheck/delete the `opacity: 0` rule to make it visible on screen.
+
+### Room 14: The Logic Gate
+* **Answer:** `true`
+* **How to solve:** Evaluate the boolean math. `(true && false)` is false. `(true && !false)` is true. `false || true` results in `true`.
+
+### Room 15: The Patient Hacker
+* **Answer:** Wait 10 seconds.
+* **How to solve:** Do nothing. After 10 seconds, the disabled grey "PROCESSING..." button will automatically light up and change to "PROCEED". Click it.
+
+### Room 16: The Double Agent
+* **Answer:** Double-Click
+* **How to solve:** Quickly left-click the button twice. It uses the `ondblclick` event listener.
+
+### Room 17: The Z-Index Blockade
+* **Answer:** Delete the invisible barrier.
+* **How to solve:** Inspect the button. Notice there is a `<div>` placed exactly over it with `z-index: 9999` and `position: absolute`. In the Elements tab, click on this blocker div and press the Delete key on the keyboard to remove it. Then click the button underneath.
+
+### Room 18: The JSON Parser
+* **Answer:** `trinity`
+* **How to solve:** Look at the JSON structure on the whiteboard. Arrays are 0-indexed. Agent `[0]` is Neo. Agent `[1]` is Trinity.
+
+### Room 19: The Hidden Input
+* **Answer:** `ROOT_ACCESS`
+* **How to solve:** Inspect the empty space above the Submit button. You will find an `<input type="hidden">` element. Double click the word `hidden` in the Elements panel and type `text`. The input box will appear. Type the password and submit.
+
+### Room 20: The Regex Validator
+* **Answer:** Any string with 3 uppercase letters followed by 3 numbers.
+* **How to solve:** Read the regex `/^[A-Z]{3}[0-9]{3}$/`. Example valid answers: `ABC123`, `HAK101`, `XYZ999`.
+
+### Room 21: The Context Menu
+* **Answer:** Right-Click
+* **How to solve:** Right-click the button. It listens for the `oncontextmenu` event.
+
+### Room 22: The Hexadecimal
+* **Answer:** `#ff0000` (or `ff0000`)
+* **How to solve:** Red is full red (`ff`), zero green (`00`), zero blue (`00`).
+
+### Room 23: The Console Error
+* **Answer:** `505_GATEWAY`
+* **How to solve:** When the room loads, a red error is forced into the DevTools Console. Open the Console tab and read the error: `SYSTEM FAULT: Error Code 505_GATEWAY`. 
+
+### Room 24: The JSON Storage
+* **Answer:** Add JSON to LocalStorage.
+* **How to solve:** Open the Application tab > Local Storage. Add a new item. Key: `sysConfig` | Value: `{"override": true}`. The value must be formatted exactly as valid JSON. Then click verify.
+
+### Room 25: The Final Override
+* **Answer:** Execute global JS function.
+* **How to solve:** Open the Console tab. Type `triggerEscape()` and press Enter. This manually calls the hidden JavaScript function to stop the timer and secure the victory.</pre>
+      </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script>
+      function openAnswers() {
+        document.getElementById('answersModal').style.display = 'block';
+      }
+
+      function closeAnswers() {
+        document.getElementById('answersModal').style.display = 'none';
+      }
+
+      window.onclick = function(event) {
+        if (event.target == document.getElementById('answersModal')) {
+          closeAnswers();
+        }
+      }
+
       const socket = io();
       
       socket.on('admin_update', function(students) {
